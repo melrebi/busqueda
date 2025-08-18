@@ -1,190 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <base target="_top">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Buscador de Catastro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <header>
+  <header class="app-header">
+    <div class="brand">
+      <img src="logo_cat.png" alt="Logo" class="brand-logo" />
       <h1>Buscador de Catastro</h1>
-    </header>
-    
-    <div class="search-container">  
-      <div class="search-group">
-        <input type="text" id="searchInput" placeholder="Ingrese referencia catastral, dirección..." onkeypress="if(event.key === 'Enter') performSearch()">
-        <button onclick="performSearch()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-          </svg>
-          Buscar
-        </button>
-      </div>
     </div>
-    
-    <div class="results-area" id="results">
+
+    <div class="header-actions">
+      <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema" title="Cambiar tema">
+        <span class="icon">🌓</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="search-card card">
+      <div class="search-row">
+        <select id="sheetSelect">
+          <option value="">Todas las hojas</option>
+          <option value="INS-25">INS-25</option>
+          <option value="REC-25">REC-25</option>
+          <option value="VAR-25">VAR-25</option>
+        </select>
+        <input id="searchInput" type="text" inputmode="search" autocomplete="off"
+               placeholder="Expediente, código u otro criterio…" />
+        <button id="searchBtn" class="btn-primary">Buscar</button>
+      </div>
+      <p class="hint">Presione <kbd>Enter</kbd> para buscar.</p>
+    </section>
+
+    <section id="results" class="results-area">
       <div class="empty-state">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-          <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-        </svg>
-        <p>Ingrese su búsqueda para comenzar</p>
+        <div class="empty-illu" aria-hidden="true">🔎</div>
+        <h2>Comienza una búsqueda</h2>
+        <p>Escribe un valor y presiona <strong>Buscar</strong>.</p>
       </div>
+    </section>
+  </main>
+
+  <template id="cardTemplate">
+    <article class="result-card card">
+      <h2 class="sheet-title"></h2>
+
+      <div class="result-section section-primary">
+        <h3>Información Principal</h3>
+        <div class="data-grid"></div>
+      </div>
+
+      <div class="result-section section-secondary hidden">
+        <h3>Información Detallada</h3>
+        <div class="data-grid"></div>
+      </div>
+
+      <div class="result-section section-tertiary hidden">
+        <h3>Información Adicional</h3>
+        <div class="data-grid"></div>
+      </div>
+    </article>
+  </template>
+
+  <template id="skeletonTemplate">
+    <div class="skeleton-card card">
+      <div class="sk-title shimmer"></div>
+      <div class="sk-line shimmer"></div>
+      <div class="sk-line shimmer"></div>
+      <div class="sk-line shimmer"></div>
     </div>
-  </div>
-  
+  </template>
+
   <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbytcfgYivgEDt0Hv34XfrM8r2Bkr3Lqu7Ycph3O-PTrKtfd2bpSpFOoQL-UbvVD0vFknw/exec';
-
-    function performSearch() {
-      const query = document.getElementById('searchInput').value.trim();
-      const resultsDiv = document.getElementById('results');
-      
-      if (!query) {
-        resultsDiv.innerHTML = `
-          <div class="empty-state error">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-            </svg>
-            <p>Por favor, ingresa un texto para buscar</p>
-          </div>`;
-        return;
-      }
-      
-      resultsDiv.innerHTML = `
-        <div class="loading-state">
-          <div class="spinner"></div>
-          <p>Buscando registros...</p>
-        </div>`;
-      
-      fetch(`${WEB_APP_URL}?query=${encodeURIComponent(query)}`)
-        .then(resp => {
-          if (!resp.ok) throw new Error('HTTP ' + resp.status); 
-          return resp.json();
-        })
-        .then(result => displayResult(result))
-        .catch(err => displayError({ message: err }));
-    }
-
-    function displayResult(result) {
-      const div = document.getElementById('results');
-      div.innerHTML = '';
-      
-      if (result.error || result.message) {
-        div.innerHTML = `
-          <div class="empty-state ${result.error ? 'error' : 'info'}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-              <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-            </svg>
-            <p>${result.error || result.message}</p>
-          </div>`;
-        return;
-      }
-      
-      if (!result.results || result.results.length === 0) {
-        div.innerHTML = `
-          <div class="empty-state">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-            </svg>
-            <p>No se encontraron resultados</p>
-          </div>`;
-        return;
-      }
-      
-      result.results.forEach(res => {
-        const resultCard = document.createElement('div');
-        resultCard.className = 'result-card';
-        
-        let html = `
-          <div class="card-header">
-            <h2>${res.sheet}</h2>
-            <span class="badge">${res.headers.length} campos</span>
-          </div>
-          
-          <div class="card-section primary">
-            <h3>Información Principal</h3>
-            <div class="data-grid">
-        `;
-        
-        const primaryFields = Math.min(5, res.headers.length);
-        for (let i = 0; i < primaryFields; i++) {
-          html += `
-            <div class="data-row">
-              <span class="data-label">${res.headers[i]}</span>
-              <span class="data-value">${res.row[i] || '-'}</span>
-            </div>
-          `;
-        }
-        
-        html += `
-            </div>
-          </div>
-        `;
-        
-        if (res.headers.length > 5) {
-          html += `
-            <div class="card-section secondary">
-              <h3>Detalles</h3>
-              <div class="data-grid">
-          `;
-          
-          const secondaryLimit = Math.min(20, res.headers.length);
-          for (let i = 5; i < secondaryLimit; i++) {
-            html += `
-              <div class="data-row">
-                <span class="data-label">${res.headers[i]}</span>
-                <span class="data-value">${res.row[i] || '-'}</span>
-              </div>
-            `;
-          }
-          
-          html += `
-              </div>
-            </div>
-          `;
-        }
-        
-        if (res.headers.length > 20) {
-          html += `
-            <div class="card-section tertiary">
-              <h3>Información Adicional</h3>
-              <div class="data-grid compact">
-          `;
-          
-          for (let i = 20; i < res.headers.length; i++) {
-            html += `
-              <div class="data-row">
-                <span class="data-label">${res.headers[i]}</span>
-                <span class="data-value">${res.row[i] || '-'}</span>
-              </div>
-            `;
-          }
-          
-          html += `
-              </div>
-            </div>
-          `;
-        }
-        
-        resultCard.innerHTML = html;
-        div.appendChild(resultCard);
-      });
-    }
-
-    function displayError(err) {
-      document.getElementById('results').innerHTML = `
-        <div class="empty-state error">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-          </svg>
-          <p>Error en la búsqueda: ${err.message || 'Intente nuevamente más tarde'}</p>
-        </div>`;
-    }
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbytcfgYivgEDt0Hv34XfrM8r2Bkr3Lqu7Ycph3O-PTrKtfd2bpSpFOoQL-UbvVD0vFknw/exec";
   </script>
+  <script src="script.js"></script>
 </body>
 </html>
